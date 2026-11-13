@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>宠物美容 Express · Pet Grooming KL</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,700;9..40,800&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { ink:'#2B1200', brand:'#FF6A00', sun:'#FFD21F', cream:'#FFF4DC', peach:'#FFE3B8' },
+  fontFamily: { display:['"DM Sans"','"Noto Sans SC"','system-ui','sans-serif'], body:['Inter','"Noto Sans SC"','system-ui','sans-serif'] }
+}}}
+</script>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-font-smoothing:antialiased}
+  body{margin:0;font-family:Inter,"Noto Sans SC",system-ui,sans-serif;background:#FFFFFF;color:#2B1200;overflow-x:hidden;line-height:1.6}
+  .fd{font-family:"DM Sans","Noto Sans SC",system-ui,sans-serif;letter-spacing:-.02em}
+
+  e{display:none} html[lang=en] z{display:none} html[lang=en] e{display:inline}
+  z,e{font-style:normal}
+
+  .page{display:none} .page.active{display:block;animation:pgIn .4s ease both}
+  @keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.page.active{animation:none}.reveal{opacity:1;transform:none;transition:none}.tick-track{animation:none!important}}
+
+  /* surfaces: fine ink line, modest radius, soft shadow — brand colour kept, toy feel removed */
+  .box{background:#fff;border:1.5px solid #2B1200;border-radius:14px;box-shadow:0 2px 0 rgba(43,18,0,.9);transition:transform .25s,box-shadow .25s;color:#2B1200}
+  .box.hov:hover{transform:translateY(-4px);box-shadow:0 12px 0 -6px rgba(43,18,0,.9),0 22px 36px -18px rgba(43,18,0,.35)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-family:"DM Sans","Noto Sans SC",sans-serif;font-weight:700;letter-spacing:-.005em;border:1.5px solid #2B1200;border-radius:10px;cursor:pointer;transition:background .2s,color .2s,transform .2s;white-space:nowrap}
+  .btn:hover{transform:translateY(-2px)} .btn:active{transform:none}
+  .btn-or{background:#FF6A00;color:#fff} .btn-or:hover{background:#E65F00}
+  .btn-yl{background:#FFD21F;color:#2B1200} .btn-yl:hover{background:#F5C800}
+  .btn-wh{background:#fff;color:#2B1200} .btn-wh:hover{background:#FFF4DC}
+  .btn-dk{background:#2B1200;color:#fff}
+  .arrow{width:1em;height:1em;transition:transform .2s} .btn:hover .arrow{transform:translateX(3px)}
+
+  .chip{display:inline-flex;align-items:center;gap:.4rem;font:700 .72rem/1 "DM Sans","Noto Sans SC",sans-serif;letter-spacing:.06em;text-transform:uppercase;border:1.5px solid #2B1200;border-radius:6px;padding:.4rem .65rem;background:#fff;color:#2B1200}
+  .tag-o{background:#FF6A00;color:#fff} .tag-y{background:#FFD21F;color:#2B1200}
+  .dot{width:.4rem;height:.4rem;border-radius:50%;background:currentColor;display:inline-block}
+
+  .ph{position:relative;overflow:hidden;background:linear-gradient(135deg,#FFD21F,#FF9A3D)}
+  .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+  .box:hover .ph img{transform:scale(1.04)}
+
+  .hero{background:#2B1200;position:relative;overflow:hidden}
+  .h1big{font-family:"DM Sans","Noto Sans SC",sans-serif;font-size:clamp(2.3rem,6.5vw,4.6rem);line-height:.98;font-weight:800;letter-spacing:-.045em;color:#2B1200}
+  .mark{background:#FF6A00;color:#fff;padding:0 .32em;border-radius:.16em;display:inline-block;margin-top:.08em;letter-spacing:0;font-size:.85em}
+  .eyebrow{font:700 .72rem/1 "DM Sans","Noto Sans SC",sans-serif;letter-spacing:.14em;text-transform:uppercase}
+
+  .tick{overflow:hidden;white-space:nowrap}
+  .tick-track{display:inline-flex;gap:3rem;animation:tick 34s linear infinite;padding-left:3rem}
+  @keyframes tick{to{transform:translateX(-50%)}}
+
+  .tagline{position:absolute;top:14px;left:14px;z-index:2;font:700 .68rem/1 "DM Sans","Noto Sans SC",sans-serif;letter-spacing:.08em;text-transform:uppercase;background:#2B1200;color:#fff;border-radius:6px;padding:.4rem .6rem}
+  .tagline.y{background:#FFD21F;color:#2B1200;border:1.5px solid #2B1200}
+  .tagline.o{background:#FF6A00}
+
+  .nl{font:700 .9rem "DM Sans","Noto Sans SC",sans-serif;padding:.4rem .85rem;border-radius:8px;transition:background .15s}
+  .nl:hover{background:#FFE3B8} .nl.on{background:#FFD21F}
+  .mnl.on{color:#FF6A00}
+  #mob{display:none} #mob.open{display:block}
+
+  .fi{width:100%;background:#fff;border:1.5px solid #2B1200;border-radius:10px;padding:.7rem .95rem;font:500 .9rem Inter,"Noto Sans SC",sans-serif;color:#2B1200;outline:none;transition:box-shadow .15s}
+  .fi:focus{box-shadow:0 0 0 3px rgba(255,106,0,.35)} .fi::placeholder{color:#B58A60}
+  .lbl{display:block;font:700 .78rem "DM Sans","Noto Sans SC",sans-serif;margin-bottom:.35rem}
+
+  .stepn{width:2.8rem;height:2.8rem;border-radius:10px;background:#2B1200;color:#FFD21F;display:flex;align-items:center;justify-content:center;font:800 1.15rem "DM Sans";flex-shrink:0}
+  .mbar{padding-bottom:env(safe-area-inset-bottom,0)}
+  .mb{font:700 .68rem "DM Sans","Noto Sans SC",sans-serif;color:#7A4A25}
+  .mb.on{color:#FF6A00}
+  .opt{display:flex;align-items:center;gap:.5rem;border:1.5px solid #2B1200;border-radius:8px;padding:.45rem .8rem;font-size:.82rem;font-weight:600;background:#fff;cursor:pointer}
+  .opt:has(input:checked){background:#FFD21F}
+  .opt input{accent-color:#2B1200}
+
+  /* before / after slider */
+  .ba{--p:50%;position:relative;aspect-ratio:4/3;overflow:hidden;background:linear-gradient(135deg,#FFD21F,#FF9A3D);user-select:none;touch-action:pan-y}
+  .ba img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .ba .bf{clip-path:inset(0 calc(100% - var(--p)) 0 0)}
+  .ba .bf img{filter:saturate(.55) contrast(.88) brightness(.88)}
+  .ba .bar{position:absolute;top:0;bottom:0;left:var(--p);width:2px;background:#fff;box-shadow:0 0 0 1px rgba(43,18,0,.5);transform:translateX(-1px);pointer-events:none}
+  .ba .knob{position:absolute;top:50%;left:var(--p);width:2.6rem;height:2.6rem;margin:-1.3rem 0 0 -1.3rem;border-radius:50%;background:#fff;border:1.5px solid #2B1200;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 6px 16px -6px rgba(43,18,0,.6)}
+  .ba input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+  .ba .lab{position:absolute;bottom:12px;font:700 .68rem/1 "DM Sans","Noto Sans SC",sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:.4rem .6rem;border-radius:6px;pointer-events:none}
+  .smp{font:700 .62rem/1 "DM Sans","Noto Sans SC",sans-serif;letter-spacing:.08em;text-transform:uppercase;border:1.5px dashed #2B1200;border-radius:6px;padding:.3rem .5rem;background:#FFF4DC;color:#2B1200}
+  .stars{color:#FF6A00;letter-spacing:.12em;font-size:1rem}
+  #offer{transition:opacity .3s,transform .3s}
+  #offer.gone{opacity:0;transform:translateY(16px);pointer-events:none}
+
+  /* hero carousel */
+  #hero-sl{display:flex;transition:transform .55s cubic-bezier(.4,0,.2,1)}
+  .hsl-slide{flex:0 0 100%;min-width:0;max-width:100%}
+  .hero1-shade{background:linear-gradient(180deg,rgba(43,18,0,.45),rgba(43,18,0,.78))}
+  @media(min-width:768px){.hero1-shade{background:linear-gradient(90deg,rgba(43,18,0,.82) 0%,rgba(43,18,0,.6) 42%,rgba(43,18,0,.05) 75%)}}
+  .hsl-arr{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:2.6rem;height:2.6rem;border-radius:50%;background:#fff;border:1.5px solid #2B1200;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 0 rgba(43,18,0,.9);transition:background .15s;padding:0}
+  .hsl-arr:hover{background:#FFD21F}
+  .hsl-dot{width:.5rem;height:.5rem;border-radius:50%;background:#2B1200;opacity:.22;cursor:pointer;transition:opacity .2s,transform .2s;border:none;padding:0}
+  .hsl-dot.on{opacity:1;transform:scale(1.4)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- understated monoline dog mark (logo/footer only) -->
+  <symbol id="mark" viewBox="0 0 32 32">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8.5 11.5C6 10 4.5 12 5 15.5c.4 2.6 2 3.4 3.3 3"/>
+      <path d="M23.5 11.5C26 10 27.5 12 27 15.5c-.4 2.6-2 3.4-3.3 3"/>
+      <path d="M8.3 12.5C9 8.6 12.2 6.5 16 6.5s7 2.1 7.7 6c.6 3.4.3 7-1.7 9.6-1.6 2.1-3.7 3.4-6 3.4s-4.4-1.3-6-3.4c-2-2.6-2.3-6.2-1.7-9.6z"/>
+      <path d="M14.6 19.2h2.8M16 19.4v1.6M14.2 22.2c1 .8 2.6.8 3.6 0"/>
+    </g>
+    <circle cx="12.8" cy="15" r="1.15" fill="currentColor"/><circle cx="19.2" cy="15" r="1.15" fill="currentColor"/>
+  </symbol>
+  <symbol id="arr" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="chk" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- HEADER -->
+<header class="fixed top-0 inset-x-0 z-50">
+  <div class="bg-ink text-sun tick py-1.5 fd" style="font-size:.78rem;font-weight:600;letter-spacing:.04em">
+    <div class="tick-track" aria-hidden="true">
+      <span><z>30 分钟闪电美容</z><e>30-MIN EXPRESS GROOMING</e></span><span><z>明码标价 · 零隐藏费</z><e>FIXED PRICES · ZERO HIDDEN FEES</e></span><span><z>完成即发照片</z><e>PHOTO UPDATE WHEN DONE</e></span><span><z>首次到访优惠 · WhatsApp 咨询</z><e>FIRST-VISIT OFFER · ASK ON WHATSAPP</e></span>
+      <span><z>30 分钟闪电美容</z><e>30-MIN EXPRESS GROOMING</e></span><span><z>明码标价 · 零隐藏费</z><e>FIXED PRICES · ZERO HIDDEN FEES</e></span><span><z>完成即发照片</z><e>PHOTO UPDATE WHEN DONE</e></span><span><z>首次到访优惠 · WhatsApp 咨询</z><e>FIRST-VISIT OFFER · ASK ON WHATSAPP</e></span>
+    </div>
+  </div>
+  <div class="bg-white border-b-[1.5px] border-ink">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+      <button onclick="goTo('home')" class="flex items-center gap-2 shrink-0" aria-label="Home">
+        <svg class="w-8 h-8 text-ink"><use href="#mark"/></svg>
+        <span class="fd leading-none text-left"><span class="block text-[1rem] font-extrabold"><z>宠物美容</z><e>Pet Grooming</e></span><span class="block text-[.66rem] font-bold tracking-[.28em] text-brand mt-0.5">EXPRESS</span></span>
+      </button>
+      <nav class="hidden md:flex items-center gap-1">
+        <button class="nl on" data-p="home" onclick="goTo('home')"><z>首页</z><e>Home</e></button>
+        <button class="nl" data-p="services" onclick="goTo('services')"><z>爆款套餐</z><e>Packages</e></button>
+        <button class="nl" data-p="membership" onclick="goTo('membership')"><z>会员优惠</z><e>Membership</e></button>
+        <button class="nl" data-p="process" onclick="goTo('process')"><z>服务流程</z><e>Process</e></button>
+      </nav>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleLang()" class="chip hover:bg-peach transition" style="padding:.35rem .6rem"><z>EN</z><e>中</e></button>
+        <button onclick="goTo('booking')" class="btn btn-or text-sm px-4 py-2 hidden md:inline-flex"><z>立即预约</z><e>Book Now</e></button>
+        <button class="md:hidden p-1" onclick="document.getElementById('mob').classList.toggle('open')" aria-label="Menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2B1200" stroke-width="2.2" stroke-linecap="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="mob" class="md:hidden border-t-[1.5px] border-ink bg-white px-4 py-2 fd text-base font-bold">
+      <button class="mnl block w-full text-left py-2.5" data-p="home" onclick="goTo('home')"><z>首页</z><e>Home</e></button>
+      <button class="mnl block w-full text-left py-2.5" data-p="services" onclick="goTo('services')"><z>爆款套餐</z><e>Packages</e></button>
+      <button class="mnl block w-full text-left py-2.5" data-p="membership" onclick="goTo('membership')"><z>会员优惠</z><e>Membership</e></button>
+      <button class="mnl block w-full text-left py-2.5" data-p="process" onclick="goTo('process')"><z>服务流程</z><e>Process</e></button>
+      <button class="mnl block w-full text-left py-2.5" data-p="booking" onclick="goTo('booking')"><z>在线预约</z><e>Book Now</e></button>
+    </div>
+  </div>
+</header>
+
+
+<!-- ═══════════ HOME ═══════════ -->
+<main id="page-home" class="page active" style="padding-top:5.4rem">
+
+  <!-- HERO CAROUSEL -->
+  <section class="hero border-b-[1.5px] border-ink" id="hero-wrap" style="position:relative;overflow:hidden">
+    <div id="hero-sl">
+
+      <!-- ══ Slide 1: SPEED — full-bleed photo background, text overlaid on the left ══ -->
+      <div class="hsl-slide" style="position:relative;background:#2B1200">
+        <img src="hero-pet.jpg" alt="Freshly groomed Pomeranian" loading="eager" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:68% 30%">
+        <div class="hero1-shade" style="position:absolute;inset:0"></div>
+        <div class="relative z-10 max-w-6xl mx-auto px-5 pt-12 pb-14 md:pb-20 md:min-h-[600px] flex items-center">
+          <div class="w-full max-w-xl">
+            <span class="chip mb-5"><span class="dot text-brand"></span><z>吉隆坡 Express 宠物美容</z><e>KL's Express Pet Grooming</e></span>
+            <h1 class="h1big" style="color:#fff"><z>30 分钟<br><span class="mark">闪电美容</span></z><e>Groomed in<br><span class="mark">30 minutes</span></e></h1>
+            <p class="mt-5 text-lg font-medium max-w-md leading-relaxed" style="color:rgba(255,255,255,.92)"><z>不用等半天，不用猜价格。洗得干净、透明收费，毛孩焕然一新。</z><e>No half-day waits. No price guessing. Spotless, transparent, fresh as new.</e></p>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <span class="chip tag-o"><z>30 分钟完成</z><e>Done in 30 min</e></span>
+              <span class="chip"><z>明码标价</z><e>Fixed price</e></span>
+              <span class="chip"><z>零隐藏费</z><e>0 hidden fees</e></span>
+            </div>
+            <div class="mt-7 flex flex-col sm:flex-row gap-3">
+              <button onclick="goTo('booking')" class="btn btn-or text-lg px-8 py-4"><z>立即预约</z><e>Book Now</e><svg class="arrow"><use href="#arr"/></svg></button>
+              <button onclick="goTo('services')" class="btn btn-wh text-lg px-8 py-4"><z>查看套餐</z><e>See Packages</e></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Slide 2: PRICING — full-width centered, giant price tiers as hero visual ══ -->
+      <div class="hsl-slide">
+        <div class="max-w-4xl mx-auto px-5 pt-12 pb-10 md:pb-16 text-center">
+          <span class="chip mb-5 mx-auto"><span class="dot text-brand"></span><z>价格透明 · 按体型收费</z><e>Transparent · priced by size</e></span>
+          <h1 class="h1big" style="color:#fff"><z>明码标价，<span class="mark">不藏招</span></z><e>Fixed prices,<br><span class="mark">no surprises</span></e></h1>
+          <p class="mt-5 text-lg font-medium max-w-xl mx-auto leading-relaxed" style="color:rgba(255,255,255,.85)"><z>价格预约前就锁定好了。不临时加价，不结账时惊喜，简单透明。</z><e>Your price is locked in before you arrive. No upsells, no surprises at checkout.</e></p>
+          <!-- giant 3-col price display -->
+          <div class="mt-8 grid grid-cols-3 gap-4 md:gap-6">
+            <div class="box bg-white p-5 md:p-8 flex flex-col items-center gap-2">
+              <span class="chip tag-y"><z>小型犬</z><e>Small</e></span>
+              <div class="fd font-extrabold leading-none mt-2" style="font-size:clamp(2.4rem,6vw,3.8rem)"><span class="text-base font-bold text-ink/50 mr-0.5">RM</span><span class="text-brand">60</span></div>
+              <div class="text-xs font-semibold text-ink/50"><z>≤ 10 kg</z><e>≤ 10 kg</e></div>
+              <div class="text-xs font-medium text-ink/60 mt-1"><z>洗澡 + 吹干 + 耳清</z><e>Bath + dry + ear</e></div>
+            </div>
+            <div class="box p-5 md:p-8 flex flex-col items-center gap-2 relative" style="background:#FF6A00;border-color:#2B1200">
+              <span class="tagline o !top-3 !left-auto !right-3"><z>最热门</z><e>Popular</e></span>
+              <span class="chip" style="background:#FFD21F;border-color:#2B1200"><z>中型犬</z><e>Medium</e></span>
+              <div class="fd font-extrabold leading-none mt-2" style="font-size:clamp(2.4rem,6vw,3.8rem)"><span class="text-base font-bold text-white/70 mr-0.5">RM</span><span class="text-white">70</span></div>
+              <div class="text-xs font-semibold text-white/60"><z>10–25 kg</z><e>10–25 kg</e></div>
+              <div class="text-xs font-medium text-white/70 mt-1"><z>洗澡 + 吹干 + 耳清</z><e>Bath + dry + ear</e></div>
+            </div>
+            <div class="box bg-white p-5 md:p-8 flex flex-col items-center gap-2">
+              <span class="chip"><z>大型犬</z><e>Large</e></span>
+              <div class="fd font-extrabold leading-none mt-2" style="font-size:clamp(2.4rem,6vw,3.8rem)"><span class="text-base font-bold text-ink/50 mr-0.5">RM</span><span class="text-brand">80</span></div>
+              <div class="text-xs font-semibold text-ink/50"><z>&gt; 25 kg</z><e>&gt; 25 kg</e></div>
+              <div class="text-xs font-medium text-ink/60 mt-1"><z>洗澡 + 吹干 + 耳清</z><e>Bath + dry + ear</e></div>
+            </div>
+          </div>
+          <div class="mt-7 flex flex-col sm:flex-row justify-center gap-3">
+            <button onclick="goTo('services')" class="btn btn-or text-lg px-8 py-4"><z>查看完整套餐</z><e>See Full Menu</e><svg class="arrow"><use href="#arr"/></svg></button>
+            <button onclick="goTo('booking')" class="btn btn-wh text-lg px-8 py-4"><z>立即预约</z><e>Book Now</e></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Slide 3: PHOTO UPDATE — photo LEFT + status-timeline right (flipped layout) ══ -->
+      <div class="hsl-slide">
+        <div class="relative max-w-6xl mx-auto px-5 pt-12 pb-10 md:pb-16 grid md:grid-cols-[.9fr_1.1fr] gap-10 items-center">
+          <!-- photo LEFT -->
+          <div class="relative w-full max-w-sm mx-auto order-2 md:order-1">
+            <div class="box ph aspect-[4/5] !rounded-[18px]" style="box-shadow:0 3px 0 #2B1200"><img data-k="full" alt="Groomed pet" loading="lazy"></div>
+            <div class="absolute right-3 bottom-5 bg-white border-[1.5px] border-ink rounded-xl px-3.5 py-2.5 shadow-[0_14px_28px_-14px_rgba(43,18,0,.5)] flex items-center gap-2.5" style="color:#2B1200">
+              <span class="w-2 h-2 rounded-full" style="background:#2FA564"></span>
+              <div class="text-xs leading-tight"><div class="fd font-bold"><z>Bella 已完成</z><e>Bella is ready</e></div><div class="text-ink/60"><z>照片已发送</z><e>Photo sent</e></div></div>
+            </div>
+          </div>
+          <!-- text + timeline RIGHT -->
+          <div class="order-1 md:order-2">
+            <span class="chip mb-5"><span class="w-2 h-2 rounded-full inline-block mr-1.5" style="background:#2FA564"></span><z>完成即通知</z><e>Instant photo update</e></span>
+            <h1 class="h1big" style="color:#fff"><z>完成了，<br><span class="mark">马上发给你</span></z><e>Done and<br><span class="mark">photo sent</span></e></h1>
+            <p class="mt-4 font-medium text-white/70 max-w-sm"><z>不用电话催，不用在店外等。每次完成即发成品照。</z><e>No chasing, no waiting outside. Photo delivered the moment it's done.</e></p>
+            <!-- status timeline cards -->
+            <div class="mt-5 flex flex-col gap-2.5">
+              <div class="flex items-center gap-3 bg-white border-[1.5px] border-ink rounded-xl px-4 py-3" style="color:#2B1200">
+                <span class="chip tag-o !py-1 !text-[.62rem] shrink-0"><z>预约确认</z><e>Booked</e></span>
+                <span class="text-sm font-medium flex-1"><z>Mochi · 周三 11:30 Express Bath</z><e>Mochi · Wed 11:30 Express Bath</e></span>
+              </div>
+              <div class="flex items-center gap-3 bg-white border-[1.5px] border-ink rounded-xl px-4 py-3" style="color:#2B1200">
+                <span class="chip tag-y !py-1 !text-[.62rem] shrink-0"><z>美容中</z><e>In progress</e></span>
+                <span class="text-sm font-medium flex-1 text-ink/70"><z>正在进行中… 预计 12:00 完成</z><e>In progress… Est. done by 12:00</e></span>
+              </div>
+              <div class="flex items-center gap-3 border-[1.5px] border-ink rounded-xl px-4 py-3" style="background:#E9F7EE;color:#2B1200">
+                <span class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style="background:#2FA564">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5l3 3 6-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="text-sm font-semibold flex-1"><z>已完成 · 照片已发出 · 32 分钟</z><e>Done · Photo sent · 32 min</e></span>
+              </div>
+            </div>
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+              <button onclick="goTo('booking')" class="btn btn-or text-lg px-8 py-4"><z>立即预约</z><e>Book Now</e><svg class="arrow"><use href="#arr"/></svg></button>
+              <button onclick="goTo('process')" class="btn btn-wh text-lg px-8 py-4"><z>了解服务流程</z><e>How It Works</e></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Slide 4: PROMO — dark ink bg (self-contained), voucher card right ══ -->
+      <div class="hsl-slide" id="hero-s4">
+        <div style="background:#2B1200">
+          <div class="max-w-5xl mx-auto px-5 pt-12 pb-10 md:pb-16 grid md:grid-cols-[1fr_1fr] gap-8 items-center">
+            <!-- LEFT: headline on dark -->
+            <div>
+              <span class="chip mb-5" style="background:#FFD21F;border-color:#2B1200;color:#2B1200"><z>开业限定</z><e>Opening offer</e></span>
+              <h1 class="h1big" style="color:#FFD21F"><z>首次到访，<br><span class="mark">专属优惠</span></z><e>First visit,<br><span class="mark">exclusive deal</span></e></h1>
+              <p class="mt-5 text-lg font-medium leading-relaxed" style="color:rgba(255,244,220,.85)"><z>WhatsApp 领取首次体验 Express Bath 专享开业优惠。限量发出，先到先得。</z><e>Claim your first Express Bath offer via WhatsApp. Limited slots — first come, first served.</e></p>
+            </div>
+            <!-- RIGHT: white voucher card — solid bg for contrast on any background -->
+            <div class="rounded-[18px] p-7 md:p-10 flex flex-col items-center text-center" style="background:#fff;border:2px solid #2B1200;box-shadow:0 4px 0 #2B1200">
+              <div class="eyebrow mb-3" style="color:#FF6A00"><z>开业特惠</z><e>OPENING SPECIAL</e></div>
+              <div class="fd font-extrabold leading-none" style="font-size:clamp(3rem,8vw,4.8rem);color:#2B1200"><z>专享<br>优惠</z><e>Exclusive<br>Offer</e></div>
+              <div class="mt-4 font-semibold" style="color:rgba(43,18,0,.6)"><z>首次 Express Bath · 限量名额</z><e>First Express Bath · Limited slots</e></div>
+              <a data-wa class="btn btn-or w-full mt-7 text-base py-4" target="_blank" rel="noopener"><z>WhatsApp 立即领取</z><e>Claim on WhatsApp</e><svg class="arrow"><use href="#arr"/></svg></a>
+              <button onclick="goTo('booking')" class="btn btn-wh w-full mt-3 text-base py-3"><z>在线预约</z><e>Book Online</e></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /hero-sl -->
+
+    <!-- prev / next arrows -->
+    <button class="hsl-arr" id="hero-prev" onclick="heroMove(-1)" aria-label="Previous" style="left:.75rem">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="#2B1200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="hsl-arr" id="hero-next" onclick="heroMove(1)" aria-label="Next" style="right:.75rem">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="#2B1200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <!-- dot indicators -->
+    <div style="display:flex;gap:.5rem;justify-content:center;padding:.6rem 0 1.1rem" id="hero-dots">
+      <button class="hsl-dot on" onclick="heroGoto(0)" aria-label="Slide 1"></button>
+      <button class="hsl-dot" onclick="heroGoto(1)" aria-label="Slide 2"></button>
+      <button class="hsl-dot" onclick="heroGoto(2)" aria-label="Slide 3"></button>
+      <button class="hsl-dot" onclick="heroGoto(3)" aria-label="Slide 4"></button>
+    </div>
+  </section>
+
+  <!-- value strip -->
+  <section class="bg-brand text-white border-b-[1.5px] border-ink">
+    <div class="max-w-6xl mx-auto px-5 py-7 grid grid-cols-2 md:grid-cols-4 gap-y-5 text-center fd">
+      <div class="md:border-r border-white/30"><div class="text-4xl font-extrabold">30<span class="text-lg font-bold ml-0.5">min</span></div><div class="text-sm font-medium opacity-95"><z>Express 洗护</z><e>Express Bath</e></div></div>
+      <div class="md:border-r border-white/30"><div class="text-4xl font-extrabold">RM60<span class="text-lg font-bold">+</span></div><div class="text-sm font-medium opacity-95"><z>价格一目了然</z><e>Clear pricing</e></div></div>
+      <div class="md:border-r border-white/30"><div class="text-4xl font-extrabold">0</div><div class="text-sm font-medium opacity-95"><z>隐藏收费</z><e>Hidden fees</e></div></div>
+      <div><div class="text-4xl font-extrabold">1:1</div><div class="text-sm font-medium opacity-95"><z>预约分时段</z><e>Staggered slots</e></div></div>
+    </div>
+  </section>
+
+  <!-- BEST SELLERS -->
+  <section class="py-20 px-5">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12 reveal">
+        <span class="chip tag-o"><z>爆款套餐</z><e>Best Sellers</e></span>
+        <h2 class="fd text-4xl md:text-5xl font-extrabold mt-4 leading-[1.05]"><z>选一个，剩下的交给我们</z><e>Pick one. We do the rest.</e></h2>
+        <p class="font-medium text-ink/70 mt-3"><z>按体型收费，价格固定，不临时加价</z><e>Priced by size. Fixed. No add-on surprises.</e></p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-7">
+        <article class="box hov overflow-hidden reveal relative">
+          <span class="tagline o"><z>最快</z><e>Fastest</e></span>
+          <div class="ph h-52 border-b-[1.5px] border-ink"><img data-k="bath" alt="Dog bath" loading="lazy"></div>
+          <div class="p-6">
+            <h3 class="fd text-2xl font-extrabold">Express Bath</h3>
+            <p class="text-sm font-medium text-ink/65 mt-1"><z>洗澡 + 吹干 + 耳清洁 · 30 分钟</z><e>Bath + dry + ear clean · 30 min</e></p>
+            <div class="fd mt-4 flex items-baseline gap-1"><span class="text-sm font-bold">RM</span><span class="text-5xl font-extrabold text-brand leading-none">60</span><span class="font-bold text-ink/60 ml-1">– 80</span></div>
+            <button onclick="goTo('booking')" class="btn btn-or w-full mt-5 py-3"><z>预约这个</z><e>Book This</e><svg class="arrow"><use href="#arr"/></svg></button>
+          </div>
+        </article>
+
+        <article class="box hov overflow-hidden reveal relative md:-translate-y-3" style="background:#FFFBEA">
+          <span class="tagline"><z>最多人选</z><e>Most Popular</e></span>
+          <div class="ph h-52 border-b-[1.5px] border-ink"><img data-k="full" alt="Groomed pug" loading="lazy"></div>
+          <div class="p-6">
+            <h3 class="fd text-2xl font-extrabold">Full Grooming</h3>
+            <p class="text-sm font-medium text-ink/65 mt-1"><z>洗 + 吹 + 剪 + 修甲 + 耳 · 45–60 分钟</z><e>Wash, dry, trim, nails, ears · 45–60 min</e></p>
+            <div class="fd mt-4 flex items-baseline gap-1"><span class="text-sm font-bold">RM</span><span class="text-5xl font-extrabold text-brand leading-none">100</span><span class="font-bold text-ink/60 ml-1">– 150</span></div>
+            <button onclick="goTo('booking')" class="btn btn-or w-full mt-5 py-3"><z>预约这个</z><e>Book This</e><svg class="arrow"><use href="#arr"/></svg></button>
+          </div>
+        </article>
+
+        <article class="box hov overflow-hidden reveal relative">
+          <span class="tagline y"><z>猫咪专属</z><e>For Cats</e></span>
+          <div class="ph h-52 border-b-[1.5px] border-ink"><img data-k="cat" alt="Cat" loading="lazy"></div>
+          <div class="p-6">
+            <h3 class="fd text-2xl font-extrabold">Cat Care</h3>
+            <p class="text-sm font-medium text-ink/65 mt-1"><z>低噪音吹干 · 减少应激 · 40 分钟</z><e>Low-noise dryer, stress-free · 40 min</e></p>
+            <div class="fd mt-4 flex items-baseline gap-1"><span class="text-sm font-bold">RM</span><span class="text-5xl font-extrabold text-brand leading-none">80</span><span class="font-bold text-ink/60 ml-1">– 100</span></div>
+            <button onclick="goTo('booking')" class="btn btn-or w-full mt-5 py-3"><z>预约这个</z><e>Book This</e><svg class="arrow"><use href="#arr"/></svg></button>
+          </div>
+        </article>
+      </div>
+
+      <div class="mt-10 flex flex-wrap items-center justify-center gap-2.5 reveal">
+        <span class="fd font-bold mr-1"><z>加购：</z><e>Add-ons:</e></span>
+        <span class="chip !normal-case !tracking-normal !text-[.8rem]"><z>牙齿清洁</z><e>Teeth</e> +RM25</span>
+        <span class="chip !normal-case !tracking-normal !text-[.8rem]"><z>香氛护理</z><e>Aroma</e> +RM20</span>
+        <span class="chip !normal-case !tracking-normal !text-[.8rem]"><z>宠物 SPA</z><e>Pet SPA</e> +RM30</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEMBERSHIP -->
+  <section class="bg-sun border-y-[1.5px] border-ink">
+    <div class="max-w-6xl mx-auto px-5 py-20">
+      <div class="text-center mb-12 reveal">
+        <span class="chip tag-o"><z>会员 · 越充越省</z><e>Membership · Save More</e></span>
+        <h2 class="fd text-4xl md:text-5xl font-extrabold mt-4 leading-[1.05]"><z>充值一次，次次有折扣</z><e>Top up once. Save every visit.</e></h2>
+        <p class="font-medium mt-3"><z>余额永不过期 · 自动扣款 · 优先预约</z><e>Credits never expire · Auto-deduct · Priority booking</e></p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 items-end">
+        <div class="box hov p-7 text-center reveal">
+          <div class="chip tag-y mb-3"><z>普通会员</z><e>Member</e></div>
+          <div class="fd text-2xl font-bold">RM 300</div>
+          <div class="fd text-7xl font-extrabold text-brand leading-none my-3"><z>9折</z><e>10%</e></div>
+          <div class="text-sm font-medium text-ink/70"><z>所有服务九折 + 优先预约</z><e>10% off everything + priority booking</e></div>
+        </div>
+        <div class="box hov p-8 text-center reveal relative" style="background:#FF6A00;color:#fff">
+          <div class="chip tag-y mb-3"><z>金卡 · 最划算</z><e>Gold · Best Value</e></div>
+          <div class="fd text-3xl font-bold">RM 600</div>
+          <div class="fd text-8xl font-extrabold leading-none my-3 text-white"><z>85折</z><e>15%</e></div>
+          <div class="text-sm font-semibold"><z>85折 + 每月免费 1 次 add-on</z><e>15% off + 1 free add-on / month</e></div>
+        </div>
+        <div class="box hov p-7 text-center reveal">
+          <div class="chip mb-3" style="background:#EDE6FF"><z>白金会员</z><e>Platinum</e></div>
+          <div class="fd text-2xl font-bold">RM 1,200</div>
+          <div class="fd text-7xl font-extrabold leading-none my-3" style="color:#6D3FE0"><z>8折</z><e>20%</e></div>
+          <div class="text-sm font-medium text-ink/70"><z>八折 + 专属时段 + 每月免费 Express Bath</z><e>20% off + exclusive slots + free monthly Bath</e></div>
+        </div>
+      </div>
+      <div class="text-center mt-10 flex flex-wrap justify-center gap-3">
+        <button onclick="goTo('booking')" class="btn btn-dk text-lg px-8 py-3.5"><z>立即成为会员</z><e>Join Now</e><svg class="arrow"><use href="#arr"/></svg></button>
+        <button onclick="goTo('membership')" class="btn btn-wh text-lg px-8 py-3.5"><z>看会员详情</z><e>Details</e></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- HIGHLIGHTS -->
+  <section class="py-20 px-5">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12 reveal">
+        <span class="chip tag-y"><z>看得见的安心</z><e>Visible Peace of Mind</e></span>
+        <h2 class="fd text-4xl md:text-5xl font-extrabold mt-4"><z>为什么毛孩爱来</z><e>Why pets love us</e></h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-7">
+        <div class="box hov overflow-hidden reveal">
+          <div class="ph h-44 border-b-[1.5px] border-ink"><img data-k="h1" alt="Open grooming station" loading="lazy"></div>
+          <div class="p-5"><div class="eyebrow text-brand mb-2">01</div><h3 class="fd text-xl font-extrabold"><z>透明操作台</z><e>Open Station</e></h3>
+            <p class="text-sm font-medium text-ink/70 mt-1"><z>全程看得见，毛孩怎么被对待，你放心。</z><e>See how your pet is treated, every step of the way.</e></p></div>
+        </div>
+        <div class="box hov overflow-hidden reveal">
+          <div class="ph h-44 border-b-[1.5px] border-ink"><img data-k="h2" alt="Pet photo update" loading="lazy"></div>
+          <div class="p-5"><div class="eyebrow text-brand mb-2">02</div><h3 class="fd text-xl font-extrabold"><z>完成即发照片</z><e>Photo When Done</e></h3>
+            <p class="text-sm font-medium text-ink/70 mt-1"><z>洗好立刻 WhatsApp 你，随时来接。</z><e>Instant WhatsApp photo — pick up anytime.</e></p></div>
+        </div>
+        <div class="box hov overflow-hidden reveal">
+          <div class="ph h-44 border-b-[1.5px] border-ink"><img data-k="h3" alt="Clean store" loading="lazy"></div>
+          <div class="p-5"><div class="eyebrow text-brand mb-2">03</div><h3 class="fd text-xl font-extrabold"><z>分时段，更干净</z><e>Staggered, Cleaner</e></h3>
+            <p class="text-sm font-medium text-ink/70 mt-1"><z>预约制，店里不拥挤，减少交叉感染。</z><e>Appointment-only keeps the shop calm and clean.</e></p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BEFORE / AFTER -->
+  <section class="px-5 pb-20">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-10 reveal">
+        <span class="chip tag-y"><z>蜕变实录</z><e>Before &amp; After</e></span>
+        <h2 class="fd text-4xl md:text-5xl font-extrabold mt-4 leading-[1.05]"><z>左右拖动，看见差别</z><e>Drag to see the difference</e></h2>
+        <p class="font-medium text-ink/70 mt-3"><z>每一次服务，我们都会拍摄洗护前后对比。</z><e>We photograph every pet before and after each visit.</e></p>
+        <p class="mt-3"><span class="smp"><z>示意图 · 开业后替换为真实对比照</z><e>Sample · replace with real photos after opening</e></span></p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-7">
+        <div class="box overflow-hidden reveal">
+          <div class="ba" data-ba>
+            <img data-k="ba1a" alt="After grooming" loading="lazy">
+            <div class="bf"><img data-k="ba1b" alt="Before grooming" loading="lazy"></div>
+            <span class="lab bg-ink text-white left-3"><z>洗护前</z><e>Before</e></span><span class="lab bg-brand text-white right-3"><z>洗护后</z><e>After</e></span>
+            <div class="bar"></div><div class="knob"><svg class="w-5 h-5"><use href="#arr"/></svg></div>
+            <input type="range" min="0" max="100" value="50" aria-label="Before and after slider">
+          </div>
+          <div class="p-5 flex items-center justify-between"><div><div class="fd font-extrabold text-lg">Full Grooming</div><div class="text-sm font-medium text-ink/65"><z>毛发打结 → 蓬松顺滑 · 52 分钟</z><e>Tangled → fluffy &amp; smooth · 52 min</e></div></div><span class="smp"><z>示例</z><e>Sample</e></span></div>
+        </div>
+        <div class="box overflow-hidden reveal">
+          <div class="ba" data-ba>
+            <img data-k="ba2a" alt="After grooming" loading="lazy">
+            <div class="bf"><img data-k="ba2b" alt="Before grooming" loading="lazy"></div>
+            <span class="lab bg-ink text-white left-3"><z>洗护前</z><e>Before</e></span><span class="lab bg-brand text-white right-3"><z>洗护后</z><e>After</e></span>
+            <div class="bar"></div><div class="knob"><svg class="w-5 h-5"><use href="#arr"/></svg></div>
+            <input type="range" min="0" max="100" value="50" aria-label="Before and after slider">
+          </div>
+          <div class="p-5 flex items-center justify-between"><div><div class="fd font-extrabold text-lg">Express Bath</div><div class="text-sm font-medium text-ink/65"><z>暗沉 → 干净亮泽 · 31 分钟</z><e>Dull → clean &amp; glossy · 31 min</e></div></div><span class="smp"><z>示例</z><e>Sample</e></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section class="bg-sun border-y-[1.5px] border-ink">
+    <div class="max-w-6xl mx-auto px-5 py-20">
+      <div class="text-center mb-12 reveal">
+        <span class="chip tag-o"><z>毛爸妈心声</z><e>Pet Parent Reviews</e></span>
+        <h2 class="fd text-4xl md:text-5xl font-extrabold mt-4 leading-[1.05]"><z>第一批体验的毛爸妈怎么说</z><e>What our first pet parents say</e></h2>
+        <p class="mt-3"><span class="smp"><z>示例版面 · 开业后替换为真实评价（可对接 Google Reviews）</z><e>Sample layout · replace with real reviews after opening (Google Reviews-ready)</e></span></p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <figure class="box p-6 reveal flex flex-col">
+          <div class="stars">★★★★★</div>
+          <blockquote class="mt-3 text-[.95rem] font-medium leading-relaxed flex-1"><z>“在此填入真实顾客评价，例如对等候时间、价格透明度的感受。”</z><e>“Insert a real customer review here — e.g. about waiting time or price transparency.”</e></blockquote>
+          <figcaption class="mt-5 pt-4 border-t border-ink/15 flex items-center gap-3"><span class="w-9 h-9 rounded-full bg-peach border-[1.5px] border-ink flex items-center justify-center fd font-extrabold">A</span><div class="text-sm"><div class="fd font-bold"><z>顾客姓名</z><e>Customer name</e></div><div class="text-ink/60"><z>宠物名 · 服务项目</z><e>Pet · Service</e></div></div></figcaption>
+        </figure>
+        <figure class="box p-6 reveal flex flex-col">
+          <div class="stars">★★★★★</div>
+          <blockquote class="mt-3 text-[.95rem] font-medium leading-relaxed flex-1"><z>“在此填入真实顾客评价，例如收到完成照片、结账时没有额外收费。”</z><e>“Insert a real customer review here — e.g. about the photo update or no surprise charges.”</e></blockquote>
+          <figcaption class="mt-5 pt-4 border-t border-ink/15 flex items-center gap-3"><span class="w-9 h-9 rounded-full bg-peach border-[1.5px] border-ink flex items-center justify-center fd font-extrabold">B</span><div class="text-sm"><div class="fd font-bold"><z>顾客姓名</z><e>Customer name</e></div><div class="text-ink/60"><z>宠物名 · 服务项目</z><e>Pet · Service</e></div></div></figcaption>
+        </figure>
+        <figure class="box p-6 reveal flex flex-col">
+          <div class="stars">★★★★★</div>
+          <blockquote class="mt-3 text-[.95rem] font-medium leading-relaxed flex-1"><z>“在此填入真实顾客评价，例如猫咪的美容体验或整体环境。”</z><e>“Insert a real customer review here — e.g. about a cat's grooming experience or the studio.”</e></blockquote>
+          <figcaption class="mt-5 pt-4 border-t border-ink/15 flex items-center gap-3"><span class="w-9 h-9 rounded-full bg-peach border-[1.5px] border-ink flex items-center justify-center fd font-extrabold">C</span><div class="text-sm"><div class="fd font-bold"><z>顾客姓名</z><e>Customer name</e></div><div class="text-ink/60"><z>宠物名 · 服务项目</z><e>Pet · Service</e></div></div></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="px-5 py-20">
+    <div class="max-w-4xl mx-auto box overflow-hidden reveal">
+      <div class="grid grid-cols-[1.1fr_1fr_1fr] fd font-bold text-center border-b-[1.5px] border-ink">
+        <div class="p-3.5 bg-peach"></div><div class="p-3.5 bg-peach border-l-[1.5px] border-ink"><z>传统店</z><e>Typical Salon</e></div><div class="p-3.5 bg-brand text-white border-l-[1.5px] border-ink">Express</div>
+      </div>
+      <div class="grid grid-cols-[1.1fr_1fr_1fr] text-center text-sm font-medium">
+        <div class="p-3.5 text-left fd font-bold border-b border-ink/15"><z>等候</z><e>Wait</e></div><div class="p-3.5 border-l-[1.5px] border-ink border-b border-b-ink/15 text-ink/55"><z>2–4 小时</z><e>2–4 hrs</e></div><div class="p-3.5 border-l-[1.5px] border-ink border-b border-b-ink/15 text-brand font-bold"><z>30–45 分钟</z><e>30–45 min</e></div>
+        <div class="p-3.5 text-left fd font-bold border-b border-ink/15"><z>价格</z><e>Price</e></div><div class="p-3.5 border-l-[1.5px] border-ink border-b border-b-ink/15 text-ink/55"><z>结账才知道</z><e>Surprise at checkout</e></div><div class="p-3.5 border-l-[1.5px] border-ink border-b border-b-ink/15 text-brand font-bold"><z>固定，零隐藏费</z><e>Fixed, 0 hidden</e></div>
+        <div class="p-3.5 text-left fd font-bold border-b border-ink/15"><z>品质</z><e>Quality</e></div><div class="p-3.5 border-l-[1.5px] border-ink border-b border-b-ink/15 text-ink/55"><z>看运气</z><e>Depends who</e></div><div class="p-3.5 border-l-[1.5px] border-ink border-b border-b-ink/15 text-brand font-bold"><z>SOP 次次如一</z><e>SOP, every time</e></div>
+        <div class="p-3.5 text-left fd font-bold"><z>透明度</z><e>Visibility</e></div><div class="p-3.5 border-l-[1.5px] border-ink text-ink/55"><z>干等</z><e>Just wait</e></div><div class="p-3.5 border-l-[1.5px] border-ink text-brand font-bold"><z>透明台 + 照片</z><e>Open station + photo</e></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 steps -->
+  <section class="px-5 pb-20">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="fd text-4xl font-extrabold text-center mb-10 reveal"><z>3 步搞定</z><e>3 easy steps</e></h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="flex gap-4 items-center reveal"><div class="stepn">1</div><div><div class="fd text-xl font-extrabold"><z>网上预约</z><e>Book Online</e></div><div class="text-sm font-medium text-ink/65"><z>30 秒，WhatsApp 确认</z><e>30 seconds, WhatsApp confirm</e></div></div></div>
+        <div class="flex gap-4 items-center reveal"><div class="stepn">2</div><div><div class="fd text-xl font-extrabold"><z>到店美容</z><e>Drop In</e></div><div class="text-sm font-medium text-ink/65"><z>30–60 分钟标准化流程</z><e>30–60 min standard SOP</e></div></div></div>
+        <div class="flex gap-4 items-center reveal"><div class="stepn">3</div><div><div class="fd text-xl font-extrabold"><z>收照片 · 来接</z><e>Photo · Pick Up</e></div><div class="text-sm font-medium text-ink/65"><z>会员自动扣款，免排队</z><e>Members auto-pay, no queue</e></div></div></div>
+      </div>
+      <div class="text-center mt-8"><button onclick="goTo('process')" class="chip hover:bg-peach transition"><z>查看完整流程</z><e>Full process</e><svg class="w-3 h-3"><use href="#arr"/></svg></button></div>
+    </div>
+  </section>
+
+  <!-- MANIFESTO -->
+  <section class="bg-ink text-white">
+    <div class="max-w-6xl mx-auto px-5 py-24 grid lg:grid-cols-[1.2fr_.8fr] gap-14 items-start">
+      <div class="reveal">
+        <span class="chip tag-y"><z>首店宣言</z><e>Our Manifesto</e></span>
+        <h2 class="fd font-extrabold leading-[1.02] mt-5" style="font-size:clamp(2.2rem,5.5vw,4rem)"><z>为什么我们在 KL<br>创立第一家 <span class="text-sun">Express</span>？</z><e>Why we opened the first<br><span class="text-sun">Express</span> in KL</e></h2>
+        <div class="mt-8 space-y-5 text-lg font-medium text-white/80 max-w-xl leading-relaxed">
+          <p><z>我们都经历过：把毛孩交出去，等上半天，结账时才发现多了一堆“隐形消费”。</z><e>We've all been there: drop your pet off, wait half a day, then find surprise charges on the bill.</e></p>
+          <p class="text-white"><z>告别漫长等待与隐形消费。我们把专业、透明、高效，带给每一只毛孩。</z><e>Goodbye long waits and hidden fees. We bring professionalism, transparency and efficiency to every pet.</e></p>
+          <p><z>这是我们的第一家店。但它从第一天起，就按照一套严格的 SOP 来运作：每个步骤有标准，每段时间有记录，每个价格写在明处。</z><e>This is our first store — but from day one it runs on a strict SOP: a standard for every step, a time for every stage, and every price in plain sight.</e></p>
+        </div>
+        <button onclick="goTo('booking')" class="btn btn-yl text-lg px-8 py-4 mt-9"><z>来第一家店体验</z><e>Visit our first store</e><svg class="arrow"><use href="#arr"/></svg></button>
+      </div>
+      <div class="reveal">
+        <div class="rounded-2xl border-[1.5px] border-white/25 divide-y divide-white/15">
+          <div class="p-6 flex gap-4"><span class="fd font-extrabold text-sun text-2xl w-8">01</span><div><div class="fd font-extrabold text-xl"><z>标准化 SOP</z><e>Standardised SOP</e></div><p class="text-sm font-medium text-white/70 mt-1"><z>洗、吹、剪、检，每一步都有书面标准，不靠运气。</z><e>Wash, dry, trim, inspect — each step has a written standard.</e></p></div></div>
+          <div class="p-6 flex gap-4"><span class="fd font-extrabold text-sun text-2xl w-8">02</span><div><div class="fd font-extrabold text-xl"><z>极致透明</z><e>Radical transparency</e></div><p class="text-sm font-medium text-white/70 mt-1"><z>开放操作台、完成即发照片、价格按体型固定。</z><e>Open station, photo on completion, prices fixed by size.</e></p></div></div>
+          <div class="p-6 flex gap-4"><span class="fd font-extrabold text-sun text-2xl w-8">03</span><div><div class="fd font-extrabold text-xl"><z>准时高效</z><e>On time, every time</e></div><p class="text-sm font-medium text-white/70 mt-1"><z>预约分时段，30–60 分钟完成，时间可预期。</z><e>Staggered slots, done in 30–60 minutes, predictably.</e></p></div></div>
+        </div>
+        <div class="mt-6 flex items-center gap-3 text-sm font-semibold text-white/70"><svg class="w-8 h-8 text-sun"><use href="#mark"/></svg><span><z>Pet Grooming Express · 吉隆坡旗舰首店</z><e>Pet Grooming Express · Kuala Lumpur flagship</e></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="px-5 py-20">
+    <div class="max-w-6xl mx-auto box relative overflow-hidden reveal" style="background:#FF6A00">
+      <div class="ph absolute inset-0 opacity-25"><img data-k="cta" alt="" loading="lazy"></div>
+      <div class="relative grid md:grid-cols-[1fr_auto] gap-6 items-center p-8 md:p-14 text-white">
+        <div>
+          <h2 class="fd text-4xl md:text-5xl font-extrabold leading-[1.05]"><z>你的毛孩，今天就香香的。</z><e>Your pet, fresh today.</e></h2>
+          <p class="font-semibold mt-3"><z>首次到访优惠 · 详情 WhatsApp 咨询</z><e>First-visit offer · ask on WhatsApp</e></p>
+        </div>
+        <button onclick="goTo('booking')" class="btn btn-yl text-xl px-9 py-4"><z>马上预约</z><e>Book Now</e><svg class="arrow"><use href="#arr"/></svg></button>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+<!-- ═══════════ SERVICES ═══════════ -->
+<main id="page-services" class="page" style="padding-top:5.4rem">
+  <section class="hero border-b-[1.5px] border-ink px-5 py-14">
+    <div class="max-w-6xl mx-auto"><span class="chip tag-o"><z>爆款套餐</z><e>Packages</e></span>
+    <h1 class="h1big mt-4"><z>明码标价，<br>按体型收费</z><e>Fixed pricing,<br>by size</e></h1>
+    <p class="font-medium mt-4 max-w-md"><z>价格固定 · 不临时报价 · 不惊喜收费</z><e>Fixed · no on-the-spot quotes · no surprises</e></p></div>
+  </section>
+  <section class="py-16 px-5">
+    <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-7">
+
+      <article class="box overflow-hidden reveal">
+        <div class="ph h-48 border-b-[1.5px] border-ink"><img data-k="bath" alt="Bath" loading="lazy"></div>
+        <div class="p-6">
+          <div class="flex justify-between items-start"><h3 class="fd text-2xl font-extrabold">Express Bath</h3><span class="chip tag-y">30 min</span></div>
+          <p class="text-sm font-medium text-ink/65 mt-1 mb-5"><z>洗澡 + 吹干 + 耳清洁 + 完成拍照</z><e>Bath + blow-dry + ear clean + photo update</e></p>
+          <div class="grid grid-cols-3 gap-3 text-center fd font-bold">
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-cream"><div class="text-xs text-ink/60"><z>小型</z><e>Small</e></div><div class="text-2xl text-brand font-extrabold">RM60</div></div>
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-cream"><div class="text-xs text-ink/60"><z>中型</z><e>Medium</e></div><div class="text-2xl text-brand font-extrabold">RM70</div></div>
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-cream"><div class="text-xs text-ink/60"><z>大型</z><e>Large</e></div><div class="text-2xl text-brand font-extrabold">RM80</div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="box overflow-hidden reveal" style="background:#FFFBEA">
+        <div class="ph h-48 border-b-[1.5px] border-ink"><img data-k="full" alt="Full grooming" loading="lazy"></div>
+        <div class="p-6">
+          <div class="flex justify-between items-start"><h3 class="fd text-2xl font-extrabold">Full Grooming <span class="chip tag-o align-middle ml-1" style="padding:.3rem .5rem"><z>热门</z><e>Top</e></span></h3><span class="chip tag-y">45–60 min</span></div>
+          <p class="text-sm font-medium text-ink/65 mt-1 mb-5"><z>Express Bath 全部 + 专业剪毛 + 修甲 + 收尾检查</z><e>Everything in Bath + breed trim + nails + final check</e></p>
+          <div class="grid grid-cols-3 gap-3 text-center fd font-bold">
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-white"><div class="text-xs text-ink/60"><z>小型</z><e>Small</e></div><div class="text-2xl text-brand font-extrabold">RM100</div></div>
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-white"><div class="text-xs text-ink/60"><z>中型</z><e>Medium</e></div><div class="text-2xl text-brand font-extrabold">RM120</div></div>
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-white"><div class="text-xs text-ink/60"><z>大型</z><e>Large</e></div><div class="text-2xl text-brand font-extrabold">RM150</div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="box overflow-hidden reveal">
+        <div class="ph h-48 border-b-[1.5px] border-ink"><img data-k="cat" alt="Cat care" loading="lazy"></div>
+        <div class="p-6">
+          <div class="flex justify-between items-start"><h3 class="fd text-2xl font-extrabold">Cat Care</h3><span class="chip tag-y">40 min</span></div>
+          <p class="text-sm font-medium text-ink/65 mt-1 mb-5"><z>猫咪专用沐浴产品 + 低噪音吹干 + 修甲</z><e>Cat shampoo + low-noise dryer + nail trim</e></p>
+          <div class="grid grid-cols-2 gap-3 text-center fd font-bold">
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-cream"><div class="text-xs text-ink/60"><z>短毛猫</z><e>Short hair</e></div><div class="text-2xl text-brand font-extrabold">RM80</div></div>
+            <div class="border-[1.5px] border-ink rounded-xl py-2.5 bg-cream"><div class="text-xs text-ink/60"><z>长毛猫</z><e>Long hair</e></div><div class="text-2xl text-brand font-extrabold">RM100</div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="box overflow-hidden reveal">
+        <div class="ph h-48 border-b-[1.5px] border-ink"><img data-k="spa" alt="Pet spa" loading="lazy"></div>
+        <div class="p-6">
+          <div class="flex justify-between items-start"><h3 class="fd text-2xl font-extrabold">Add-on <z>增值</z></h3><span class="chip tag-y">+15 min</span></div>
+          <div class="mt-3 fd font-bold text-lg divide-y divide-ink/15">
+            <div class="flex justify-between py-2.5"><span><z>牙齿清洁</z><e>Teeth Cleaning</e></span><span class="text-brand">RM25</span></div>
+            <div class="flex justify-between py-2.5"><span><z>香氛护理</z><e>Aromatherapy</e></span><span class="text-brand">RM20</span></div>
+            <div class="flex justify-between py-2.5"><span><z>宠物 SPA</z><e>Pet SPA</e></span><span class="text-brand">RM30</span></div>
+          </div>
+          <p class="mt-3 text-xs font-bold text-brand"><z>金卡 / 白金会员每月享免费福利</z><e>Gold / Platinum members get monthly freebies</e></p>
+        </div>
+      </article>
+    </div>
+
+    <div class="max-w-6xl mx-auto mt-10 box p-6 reveal" style="background:#FFE3B8">
+      <h4 class="fd text-xl font-extrabold mb-3"><z>体型说明</z><e>Size Guide</e></h4>
+      <div class="grid sm:grid-cols-3 gap-3 text-sm font-medium">
+        <div><b class="fd"><z>小型</z><e>Small</e></b> · <z>&lt;10kg（马尔济斯、约克夏、柴犬）</z><e>&lt;10kg (Maltese, Yorkie, Shiba)</e></div>
+        <div><b class="fd"><z>中型</z><e>Medium</e></b> · <z>10–25kg（柯基、贵宾、雪纳瑞）</z><e>10–25kg (Corgi, Poodle, Schnauzer)</e></div>
+        <div><b class="fd"><z>大型</z><e>Large</e></b> · <z>25kg+（金毛、拉布拉多、边牧）</z><e>25kg+ (Golden, Lab, Border Collie)</e></div>
+      </div>
+    </div>
+    <div class="text-center mt-10"><button onclick="goTo('booking')" class="btn btn-or text-xl px-10 py-4"><z>立即预约</z><e>Book Now</e><svg class="arrow"><use href="#arr"/></svg></button></div>
+  </section>
+</main>
+
+
+<!-- ═══════════ MEMBERSHIP ═══════════ -->
+<main id="page-membership" class="page" style="padding-top:5.4rem">
+  <section class="hero border-b-[1.5px] border-ink px-5 py-14">
+    <div class="max-w-6xl mx-auto"><span class="chip tag-o"><z>会员计划</z><e>Membership</e></span>
+    <h1 class="h1big mt-4"><z>预充值，<br>越充越省</z><e>Prepay.<br>Save more.</e></h1></div>
+  </section>
+  <section class="py-16 px-5">
+    <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-7 items-start">
+      <div class="box hov p-7 reveal">
+        <span class="chip tag-y"><z>普通会员</z><e>Member</e></span>
+        <div class="fd text-4xl font-extrabold mt-4">RM 300</div>
+        <div class="fd text-7xl font-extrabold text-brand my-1 leading-none"><z>9折</z><e>10%</e></div>
+        <ul class="space-y-2.5 font-medium text-sm mt-5">
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0 text-brand"><use href="#chk"/></svg><z>所有服务九折</z><e>10% off all services</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0 text-brand"><use href="#chk"/></svg><z>优先预约权</z><e>Priority booking</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0 text-brand"><use href="#chk"/></svg><z>余额永不过期</z><e>Credits never expire</e></li>
+        </ul>
+        <button onclick="goTo('booking')" class="btn btn-wh w-full py-3 mt-7"><z>立即加入</z><e>Join</e></button>
+      </div>
+      <div class="box hov p-7 reveal md:-translate-y-3" style="background:#FF6A00;color:#fff">
+        <span class="chip tag-y"><z>金卡 · 最划算</z><e>Gold · Best Value</e></span>
+        <div class="fd text-4xl font-extrabold mt-4">RM 600</div>
+        <div class="fd text-8xl font-extrabold leading-none my-1"><z>85折</z><e>15%</e></div>
+        <ul class="space-y-2.5 font-semibold text-sm mt-5">
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0 text-sun"><use href="#chk"/></svg><z>所有服务 85 折</z><e>15% off all services</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0 text-sun"><use href="#chk"/></svg><z>优先预约权</z><e>Priority booking</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0 text-sun"><use href="#chk"/></svg><z>每月 1 次免费 add-on</z><e>1 free add-on / month</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0 text-sun"><use href="#chk"/></svg><z>余额永不过期</z><e>Credits never expire</e></li>
+        </ul>
+        <button onclick="goTo('booking')" class="btn btn-yl w-full py-3 mt-7"><z>立即升级</z><e>Upgrade</e></button>
+      </div>
+      <div class="box hov p-7 reveal">
+        <span class="chip" style="background:#EDE6FF"><z>白金会员</z><e>Platinum</e></span>
+        <div class="fd text-4xl font-extrabold mt-4">RM 1,200</div>
+        <div class="fd text-7xl font-extrabold my-1 leading-none" style="color:#6D3FE0"><z>8折</z><e>20%</e></div>
+        <ul class="space-y-2.5 font-medium text-sm mt-5">
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0" style="color:#6D3FE0"><use href="#chk"/></svg><z>所有服务八折</z><e>20% off all services</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0" style="color:#6D3FE0"><use href="#chk"/></svg><z>专属时段</z><e>Exclusive time slots</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0" style="color:#6D3FE0"><use href="#chk"/></svg><z>每月 1 次免费 Express Bath</z><e>1 free Express Bath / month</e></li>
+          <li class="flex gap-2.5"><svg class="w-4 h-4 mt-0.5 shrink-0" style="color:#6D3FE0"><use href="#chk"/></svg><z>宠物照片档案</z><e>Pet photo archive</e></li>
+        </ul>
+        <button onclick="goTo('booking')" class="btn btn-wh w-full py-3 mt-7"><z>立即加入</z><e>Join</e></button>
+      </div>
+    </div>
+    <div class="max-w-5xl mx-auto mt-14 grid sm:grid-cols-3 gap-5 text-center reveal">
+      <div class="box p-5"><div class="fd font-extrabold text-lg"><z>充值即省钱</z><e>Save from day one</e></div></div>
+      <div class="box p-5"><div class="fd font-extrabold text-lg"><z>余额永不过期</z><e>Never expires</e></div></div>
+      <div class="box p-5"><div class="fd font-extrabold text-lg"><z>优先预约 · 快速结账</z><e>Priority · fast checkout</e></div></div>
+    </div>
+  </section>
+</main>
+
+
+<!-- ═══════════ PROCESS ═══════════ -->
+<main id="page-process" class="page" style="padding-top:5.4rem">
+  <section class="hero border-b-[1.5px] border-ink px-5 py-14">
+    <div class="max-w-6xl mx-auto"><span class="chip tag-o"><z>服务流程</z><e>Process</e></span>
+    <h1 class="h1big mt-4"><z>SOP 标准化，<br>次次如一</z><e>Standardized,<br>every time</e></h1></div>
+  </section>
+  <section class="py-16 px-5">
+    <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
+      <div class="box p-5 flex gap-4 reveal"><div class="stepn">1</div><div><div class="fd text-xl font-extrabold"><z>预约确认</z><e>Booking</e></div><p class="text-sm font-medium text-ink/70"><z>提前 24 小时线上预约，自动短信确认与提醒。</z><e>Book 24h ahead. Auto SMS confirmation + reminder.</e></p></div></div>
+      <div class="box p-5 flex gap-4 reveal"><div class="stepn">2</div><div><div class="fd text-xl font-extrabold"><z>接待签到 · 5 分钟</z><e>Check-in · 5 min</e></div><p class="text-sm font-medium text-ink/70"><z>记录宠物状况，确认项目，签署知情同意书。</z><e>Record condition, confirm service, sign consent.</e></p></div></div>
+      <div class="box p-5 flex gap-4 reveal"><div class="stepn">3</div><div><div class="fd text-xl font-extrabold"><z>洗澡 · 15 分钟</z><e>Bath · 15 min</e></div><p class="text-sm font-medium text-ink/70"><z>标准洗毛程序，指定品牌沐浴露。</z><e>Standard wash with our specified shampoo.</e></p></div></div>
+      <div class="box p-5 flex gap-4 reveal"><div class="stepn">4</div><div><div class="fd text-xl font-extrabold"><z>吹干 + 造型 · 15–25 分钟</z><e>Dry + Style · 15–25 min</e></div><p class="text-sm font-medium text-ink/70"><z>按犬种 SOP 与图册；Full Grooming 在此完成剪毛。</z><e>Breed SOP with reference guide; trim happens here.</e></p></div></div>
+      <div class="box p-5 flex gap-4 reveal"><div class="stepn">5</div><div><div class="fd text-xl font-extrabold"><z>收尾检查 · 5 分钟</z><e>Final Check · 5 min</e></div><p class="text-sm font-medium text-ink/70"><z>耳道、指甲、全身检视，拍照存档。</z><e>Ears, nails, full inspection, photo archive.</e></p></div></div>
+      <div class="box p-5 flex gap-4 reveal"><div class="stepn">6</div><div><div class="fd text-xl font-extrabold"><z>通知取回 + 结账</z><e>Pickup + Checkout</e></div><p class="text-sm font-medium text-ink/70"><z>立即发照片，会员自动扣款。</z><e>Instant photo; members auto-deduct.</e></p></div></div>
+    </div>
+    <div class="max-w-5xl mx-auto mt-10 box p-7 text-center reveal" style="background:#FF6A00;color:#fff">
+      <div class="fd text-5xl md:text-6xl font-extrabold">30–60 min</div>
+      <div class="font-semibold mt-1"><z>从接待到通知取回，全程标准化，时间可预期</z><e>Check-in to pickup — predictable timing</e></div>
+    </div>
+    <div class="max-w-5xl mx-auto mt-14">
+      <h2 class="fd text-3xl font-extrabold text-center mb-7 reveal"><z>团队 · 4–5 人稳定运营</z><e>Team · 4–5 people</e></h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-5 text-center">
+        <div class="box hov p-5 reveal"><div class="fd font-extrabold"><z>店长</z><e>Store Manager</e></div><div class="fd text-brand text-3xl font-extrabold mt-1">1</div></div>
+        <div class="box hov p-5 reveal"><div class="fd font-extrabold"><z>首席 Groomer</z><e>Head Groomer</e></div><div class="fd text-brand text-3xl font-extrabold mt-1">1</div></div>
+        <div class="box hov p-5 reveal"><div class="fd font-extrabold"><z>Groomer 助理</z><e>Assistants</e></div><div class="fd text-brand text-3xl font-extrabold mt-1">2</div></div>
+        <div class="box hov p-5 reveal"><div class="fd font-extrabold"><z>兼职前台</z><e>Reception (PT)</e></div><div class="fd text-brand text-3xl font-extrabold mt-1">1</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+<!-- ═══════════ BOOKING ═══════════ -->
+<main id="page-booking" class="page" style="padding-top:5.4rem">
+  <section class="hero border-b-[1.5px] border-ink px-5 py-14">
+    <div class="max-w-6xl mx-auto"><span class="chip tag-o"><z>在线预约</z><e>Book Online</e></span>
+    <h1 class="h1big mt-4"><z>30 秒<br>完成预约</z><e>Book in<br>30 seconds</e></h1>
+    <p class="font-medium mt-4"><z>24 小时内 WhatsApp 确认时间</z><e>We confirm via WhatsApp within 24h</e></p></div>
+  </section>
+  <section class="py-16 px-5">
+    <div class="max-w-5xl mx-auto grid md:grid-cols-5 gap-8">
+      <div class="md:col-span-3 box p-6 md:p-8 reveal">
+        <form id="bk" onsubmit="done(event)" class="space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label><span class="lbl"><z>主人姓名 *</z><e>Your Name *</e></span><input class="fi" placeholder="Lim Wei Ling" required></label>
+            <label><span class="lbl"><z>联系电话 *</z><e>Phone *</e></span><input type="tel" class="fi" placeholder="012-345 6789" required></label>
+            <label><span class="lbl"><z>宠物名字 *</z><e>Pet's Name *</e></span><input class="fi" placeholder="Mochi" required></label>
+            <label><span class="lbl"><z>宠物类型 *</z><e>Pet Type *</e></span>
+              <select class="fi" required><option value="">—</option><option>小型犬 Small Dog</option><option>中型犬 Medium Dog</option><option>大型犬 Large Dog</option><option>短毛猫 Cat Short Hair</option><option>长毛猫 Cat Long Hair</option></select></label>
+          </div>
+          <label class="block"><span class="lbl"><z>选择套餐 *</z><e>Package *</e></span>
+            <select class="fi" required><option value="">—</option><option>Express Bath (RM 60–80)</option><option>Full Grooming (RM 100–150)</option><option>Cat Care (RM 80–100)</option></select></label>
+          <div><span class="lbl"><z>增值服务（可选）</z><e>Add-ons (optional)</e></span>
+            <div class="flex flex-wrap gap-2">
+              <label class="opt"><input type="checkbox"><z>牙齿清洁</z><e>Teeth</e> +RM25</label>
+              <label class="opt"><input type="checkbox"><z>香氛</z><e>Aroma</e> +RM20</label>
+              <label class="opt"><input type="checkbox">SPA +RM30</label>
+            </div></div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label><span class="lbl"><z>偏好日期 *</z><e>Date *</e></span><input type="date" class="fi" required></label>
+            <label><span class="lbl"><z>偏好时段</z><e>Time</e></span>
+              <select class="fi"><option>9:00–10:00</option><option>10:00–11:00</option><option>12:00–13:00</option><option>14:00–15:00</option><option>15:00–16:00</option><option>16:00–17:00</option></select></label>
+          </div>
+          <label class="block"><span class="lbl"><z>备注</z><e>Notes</e></span><textarea rows="3" class="fi resize-none" placeholder="皮肤敏感 / sensitive skin"></textarea></label>
+          <button type="submit" class="btn btn-or w-full text-lg py-4"><z>提交预约</z><e>Submit Booking</e><svg class="arrow"><use href="#arr"/></svg></button>
+          <p class="text-xs text-ink/60 text-center font-medium"><z>我们会在 24 小时内通过 WhatsApp 联系确认时间</z><e>We'll confirm via WhatsApp within 24 hours</e></p>
+        </form>
+        <div id="ok" class="hidden text-center py-12">
+          <svg class="w-14 h-14 mx-auto text-brand"><use href="#mark"/></svg>
+          <div class="fd text-3xl font-extrabold mt-3"><z>已收到你的预约</z><e>Request received</e></div>
+          <p class="font-medium text-ink/70 mt-1"><z>我们会在 24 小时内通过 WhatsApp 确认时间。</z><e>We'll confirm via WhatsApp within 24 hours.</e></p>
+        </div>
+      </div>
+
+      <aside class="md:col-span-2 space-y-5 reveal">
+        <div class="box p-5"><h3 class="fd text-lg font-extrabold"><z>位置</z><e>Location</e></h3><p class="text-sm font-medium text-ink/70 mt-1"><z>KL 住宅区 shop lot（SS2 / Desa ParkCity / Bangsar South 一带），具体地址即将公布，停车方便。</z><e>Residential-area shop lot in KL (SS2 / Desa ParkCity / Bangsar South). Exact address coming soon.</e></p></div>
+        <div class="box p-5"><h3 class="fd text-lg font-extrabold"><z>营业时间</z><e>Hours</e></h3>
+          <div class="text-sm font-semibold mt-2 space-y-1"><div class="flex justify-between"><span><z>周一至周五</z><e>Mon–Fri</e></span><span>9:00–18:00</span></div><div class="flex justify-between"><span><z>周六</z><e>Sat</e></span><span>9:00–17:00</span></div><div class="flex justify-between"><span><z>周日/公假</z><e>Sun/PH</e></span><span class="text-brand"><z>预约制</z><e>By appt.</e></span></div></div></div>
+        <div class="box p-5"><h3 class="fd text-lg font-extrabold"><z>联系</z><e>Contact</e></h3><div class="text-sm font-semibold mt-1 space-y-1"><div>WhatsApp +60 1X-XXXX XXXX</div><div>Instagram @petgrooming.express</div><div>TikTok @petgrooming.express</div></div></div>
+        <div class="box p-5" style="background:#FF6A00;color:#fff"><div class="fd text-xl font-extrabold"><z>首次到访优惠</z><e>First-Visit Offer</e></div><p class="text-sm font-medium mt-1"><z>WhatsApp 咨询详情</z><e>Ask via WhatsApp for details</e></p></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+
+<!-- FOOTER -->
+<footer class="bg-ink text-cream pb-24 md:pb-0">
+  <div class="max-w-6xl mx-auto px-5 py-14 grid sm:grid-cols-3 gap-10">
+    <div>
+      <div class="flex items-center gap-2.5 mb-3"><svg class="w-8 h-8 text-sun"><use href="#mark"/></svg>
+        <div class="fd leading-none"><div class="text-lg font-extrabold text-sun"><z>宠物美容</z><e>Pet Grooming</e></div><div class="text-[.66rem] tracking-[.3em] font-bold text-brand mt-0.5">EXPRESS</div></div></div>
+      <p class="text-sm font-medium opacity-75"><z>快、净、透明。因为你的毛孩值得最好的。</z><e>Fast. Clean. Transparent. Because your pet deserves the best.</e></p>
+    </div>
+    <div class="fd font-semibold space-y-2 text-sm">
+      <button class="block hover:text-sun" onclick="goTo('services')"><z>爆款套餐</z><e>Packages</e></button>
+      <button class="block hover:text-sun" onclick="goTo('membership')"><z>会员优惠</z><e>Membership</e></button>
+      <button class="block hover:text-sun" onclick="goTo('process')"><z>服务流程</z><e>Process</e></button>
+      <button class="block hover:text-sun" onclick="goTo('booking')"><z>在线预约</z><e>Book Now</e></button>
+    </div>
+    <div class="text-sm font-medium space-y-1.5 opacity-85"><div>@petgrooming.express</div><div>WhatsApp +60 1X-XXXX XXXX</div><div>Kuala Lumpur, Malaysia</div></div>
+  </div>
+  <div class="text-center text-xs font-medium py-5 border-t border-cream/15 opacity-60">© 2026 宠物美容 Express · Kuala Lumpur</div>
+</footer>
+
+<!-- floating opening offer -->
+<div id="offer" class="fixed z-40 right-3 left-3 md:left-auto md:right-6 bottom-[4.6rem] md:bottom-6 md:max-w-sm bg-ink text-white rounded-xl border-[1.5px] border-ink shadow-[0_18px_40px_-14px_rgba(43,18,0,.6)] p-4 pr-10">
+  <button onclick="document.getElementById('offer').classList.add('gone')" class="absolute top-2.5 right-3 text-white/60 hover:text-white text-lg leading-none" aria-label="Close">×</button>
+  <span class="chip tag-o !py-1.5"><z>开业限定</z><e>Opening offer</e></span>
+  <p class="text-sm font-semibold mt-2 leading-snug"><z>首次体验 Express Bath 享专享优惠，点击 WhatsApp 领取</z><e>First Express Bath gets an exclusive offer — claim it on WhatsApp</e></p>
+  <a data-wa class="btn btn-yl text-sm px-4 py-2 mt-3" target="_blank" rel="noopener"><z>WhatsApp 领取</z><e>Claim on WhatsApp</e><svg class="arrow"><use href="#arr"/></svg></a>
+</div>
+
+<!-- mobile bar -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t-[1.5px] border-ink mbar">
+  <div class="grid grid-cols-5 items-center text-center py-2">
+    <button class="mb on" data-p="home" onclick="goTo('home')"><z>首页</z><e>Home</e></button>
+    <button class="mb" data-p="services" onclick="goTo('services')"><z>套餐</z><e>Packages</e></button>
+    <button class="mb" data-p="booking" onclick="goTo('booking')"><span class="inline-block bg-brand text-white border-[1.5px] border-ink rounded-lg px-3.5 py-2 text-xs"><z>预约</z><e>Book</e></span></button>
+    <button class="mb" data-p="membership" onclick="goTo('membership')"><z>会员</z><e>Member</e></button>
+    <button class="mb" data-p="process" onclick="goTo('process')"><z>流程</z><e>Process</e></button>
+  </div>
+</nav>
+
+<script>
+  /* 图片：只改这里的 Unsplash photo ID 即可换图 */
+  const U = id => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1000&q=80`;
+  const IMG = {
+    hero: U('1587300003388-59208cc962cb'),
+    bath: U('1583511655857-d19b40a7a54e'),
+    full: U('1517849845537-4d257902454a'),
+    cat:  U('1514888286974-6c03e2ca1dba'),
+    spa:  U('1543466835-00a7907e9de1'),
+    h1:   U('1548199973-03cce0bbc87b'),
+    h2:   U('1601758228041-f3b2795255f1'),
+    h3:   U('1450778869180-41d0601e046e'),
+    cta:  U('1596492784531-6e6eb5ea9993'),
+    ba1a: U('1517849845537-4d257902454a'),   // 对比图（示意）：洗护后
+    ba1b: U('1517849845537-4d257902454a'),   // 对比图（示意）：洗护前 —— 开业后换成真实照片
+    ba2a: U('1583511655857-d19b40a7a54e'),
+    ba2b: U('1583511655857-d19b40a7a54e')
+  };
+  /* WhatsApp：把号码改成真实号码（国际格式，不带 + 或空格） */
+  const WA_NUMBER = '60100000000';
+  const WA_TEXT = encodeURIComponent('Hi! 我想领取首次体验 Express Bath 的开业优惠 / I\'d like to claim the first-visit Express Bath offer.');
+  document.querySelectorAll('a[data-wa]').forEach(a => a.href = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`);
+  /* 前后对比滑块 */
+  document.querySelectorAll('[data-ba]').forEach(b => {
+    const r = b.querySelector('input');
+    r.addEventListener('input', () => b.style.setProperty('--p', r.value + '%'));
+  });
+  /* 加载失败 → 移除 <img>，露出橙黄渐变底，不出现破图 */
+  document.querySelectorAll('img[data-k]').forEach(img => { img.onerror = () => img.remove(); img.src = IMG[img.dataset.k]; });
+
+  function goTo(id){
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-'+id).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    document.querySelectorAll('.nl,.mnl,.mb').forEach(b => b.classList.toggle('on', b.dataset.p===id));
+    document.getElementById('mob').classList.remove('open');
+    setTimeout(reveal,50);
+  }
+  function toggleLang(){ const h=document.documentElement; h.lang = h.lang==='zh'?'en':'zh'; }
+  function reveal(){
+    document.querySelectorAll('.page.active .reveal:not(.in)').forEach(el=>{
+      if(!('IntersectionObserver' in window)){ el.classList.add('in'); return; }
+      if(el._o) return; el._o = true;
+      const o = new IntersectionObserver(es=>es.forEach(x=>{ if(x.isIntersecting){ x.target.classList.add('in'); o.unobserve(x.target); } }),{threshold:.08});
+      o.observe(el);
+    });
+  }
+  function done(e){ e.preventDefault(); document.getElementById('bk').style.display='none'; document.getElementById('ok').classList.remove('hidden'); }
+  document.addEventListener('DOMContentLoaded', reveal);
+
+  /* Hero carousel */
+  (function(){
+    const sl = document.getElementById('hero-sl');
+    const wrap = document.getElementById('hero-wrap');
+    const dots = document.querySelectorAll('#hero-dots .hsl-dot');
+    const arrPrev = document.getElementById('hero-prev');
+    const arrNext = document.getElementById('hero-next');
+    const N = 4;
+    const bgColors = ['#2B1200','#2B1200','#2B1200','#2B1200'];
+    const dotColors = ['#FFD21F','#FFD21F','#FFD21F','#FFD21F'];
+    const arrBg     = ['rgba(255,255,255,.15)','rgba(255,255,255,.15)','rgba(255,255,255,.15)','rgba(255,255,255,.12)'];
+    const arrBd     = ['rgba(255,255,255,.5)','rgba(255,255,255,.5)','rgba(255,255,255,.5)','rgba(255,210,31,.5)'];
+    let idx = 0, tmr;
+    function go(n){
+      idx = ((n % N) + N) % N;
+      sl.style.transform = 'translateX(-' + (idx * 100) + '%)';
+      wrap.style.background = bgColors[idx];
+      /* dots */
+      dots.forEach(function(d,i){
+        d.classList.toggle('on', i === idx);
+        d.style.background = dotColors[idx];
+      });
+      /* arrows */
+      [arrPrev, arrNext].forEach(function(a){
+        a.style.background = arrBg[idx];
+        a.style.borderColor = arrBd[idx];
+      });
+      /* arrow icon color */
+      var arrowStroke = '#FFD21F';
+      document.querySelectorAll('.hsl-arr path').forEach(function(p){ p.setAttribute('stroke', arrowStroke); });
+    }
+    window.heroMove = function(dir){ clearInterval(tmr); go(idx + dir); tmr = setInterval(function(){ go(idx + 1); }, 10000); };
+    window.heroGoto = function(n){ clearInterval(tmr); go(n); tmr = setInterval(function(){ go(idx + 1); }, 10000); };
+    go(0);
+    tmr = setInterval(function(){ go(idx + 1); }, 10000);
+  })();
+</script>
+</body>
+</html>
